@@ -2,7 +2,7 @@
   "miniprogramRoot": "./dist",
   "projectname": "taro-things-app",
   "description": "这是一个简单的前端taro项目",
-  "appid": "touristappid",
+  "appid": "wxf1a91e28c1c9e1c3",
   "setting": {
     "urlCheck": true,
     "es6": false,
