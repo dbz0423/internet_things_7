@@ -1,0 +1,235 @@
+// All styles will be handled by Tailwind CSS.
+// This file can be kept empty or removed if your project setup allows.
+
+/* 颜色变量 */
+$primary-color: #007bff; // 蓝色
+$secondary-color: #ffffff; // 白色
+$text-color: #333333;
+
+// 定义全局变量
+$primary-bg-color: #0a1931; // 深蓝色背景
+// $card-bg-color: rgba(24, 50, 90, 0.6); // 旧卡片半透明背景
+$card-bg-color-glass: rgba(30, 60, 110, 0.55); // 玻璃拟态卡片背景
+$card-border-color-glass: rgba(255, 255, 255, 0.15);
+$primary-text-color: #ffffff;
+$secondary-text-color: #c0c0c0;
+$accent-color: #4a90e2; // 调整为稍亮的蓝色，用于链接和强调
+$warning-color: #ff4d4f; // 告警红色
+$border-radius: 20px; // 稍微增大圆角
+$font-size-large: 34px; // 略微调整
+$font-size-medium: 18px; // 略微调整
+$font-size-small: 13px; // 略微调整
+$font-size-xsmall: 11px; // 略微调整
+$blur-intensity: 8px; // 玻璃模糊程度
+
+.index-page {
+  padding: 20px;
+  background-color: $secondary-color;
+  color: $text-color;
+  text-align: center;
+}
+
+.page-container {
+  background-color: $primary-bg-color;
+  min-height: 100vh;
+  padding: 25px; // 增加页面整体内边距
+  color: $primary-text-color;
+  box-sizing: border-box;
+}
+
+.icon {
+  font-size: 22px; // 调整默认图标大小
+}
+
+.section-title {
+  font-size: $font-size-medium + 2px; // 略微增大节标题
+  font-weight: 600; // 使用semibold字重
+  margin-bottom: 20px; // 增加标题下的间距
+}
+
+// 头部问候区
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 35px; // 增加头部下的间距
+
+  .greeting-sub {
+    font-size: $font-size-medium;
+    color: $secondary-text-color;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .greeting-main {
+    font-size: $font-size-large;
+    font-weight: bold;
+  }
+
+  .notification-bell {
+    position: relative;
+    background-color: $card-bg-color-glass; // 应用玻璃背景
+    border: 1px solid $card-border-color-glass;
+    backdrop-filter: blur($blur-intensity);
+    border-radius: 50%;
+    width: 50px; // 增大图标背景尺寸
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+    .icon {
+      font-size: 24px;
+    }
+
+    .notification-dot {
+      position: absolute;
+      top: 10px; // 调整红点位置
+      right: 10px;
+      width: 10px;
+      height: 10px;
+      background-color: $warning-color;
+      border-radius: 50%;
+      border: 2px solid $primary-bg-color;
+    }
+  }
+}
+
+// 状态速览模块
+.status-overview-section {
+  background-color: $card-bg-color-glass;
+  padding: 25px; // 增加内边距
+  border-radius: $border-radius;
+  margin-bottom: 35px; // 增加模块下的间距
+  backdrop-filter: blur($blur-intensity);
+  border: 1px solid $card-border-color-glass;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+
+  .status-title {
+    color: $primary-text-color;
+    margin-bottom: 20px;
+  }
+
+  .status-content-wrapper {
+    // 保持与设计图一致，让天气信息在告警信息下方
+  }
+
+  .status-main-content {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px; // 增加卡片组和天气信息间的距离
+
+    .status-card {
+      background-color: rgba(50, 80, 130, 0.6); // 内嵌卡片背景，可微调对比度
+      padding: 20px; // 增加内嵌卡片内边距
+      border-radius: $border-radius / 1.2; // 调整圆角
+      flex-basis: calc(50% - 12px); // 调整卡片宽度和间隙
+      box-sizing: border-box;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+
+      .status-card-title {
+        font-size: $font-size-small;
+        color: $secondary-text-color;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .status-card-value {
+        font-size: $font-size-large - 6px;
+        font-weight: bold;
+        color: $primary-text-color;
+
+        .status-card-unit {
+          font-size: $font-size-small;
+          font-weight: normal;
+          margin-left: 5px;
+        }
+      }
+
+      .red-text {
+        color: $warning-color;
+      }
+    }
+  }
+
+  .weather-info {
+    display: flex;
+    align-items: center;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15); // 分割线颜色调整
+
+    .weather-icon {
+      font-size: $font-size-small + 2px;
+      margin-right: 10px;
+    }
+
+    .weather-text {
+      font-size: $font-size-small;
+      color: $secondary-text-color;
+      flex-grow: 1;
+    }
+
+    .view-details-link {
+      font-size: $font-size-small;
+      color: $accent-color;
+      cursor: pointer;
+      font-weight: 500;
+    }
+  }
+}
+
+// 功能模块区
+.functional-modules-section {
+  .modules-title {
+    color: $primary-text-color;
+    margin-bottom: 20px;
+  }
+  .modules-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px; // 增大网格间距
+
+    .module-item {
+      background-color: $card-bg-color-glass;
+      border-radius: $border-radius;
+      padding: 25px; // 增加内边距
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      min-height: 160px; // 调整最小高度
+      justify-content: center;
+      backdrop-filter: blur($blur-intensity);
+      border: 1px solid $card-border-color-glass;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; // 添加悬停效果
+
+      &:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+      }
+
+      .module-icon {
+        font-size: $font-size-large - 8px;
+        margin-bottom: 12px;
+      }
+      .icon-text-placeholder {
+        font-size: $font-size-medium;
+        color: $secondary-text-color;
+      }
+
+      .module-title {
+        font-size: $font-size-medium - 2px;
+        font-weight: 600;
+        color: $primary-text-color;
+        margin-bottom: 6px;
+      }
+
+      .module-subtitle {
+        font-size: $font-size-xsmall;
+        color: $secondary-text-color;
+      }
+    }
+  }
+}
