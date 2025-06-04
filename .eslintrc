@@ -1,7 +1,18 @@
 {
-  "extends": ["taro/react"],
+  "extends": ["taro/react", "prettier"],
+  "plugins": ["react", "react-hooks"],
   "rules": {
-    "react/jsx-uses-react": "off",
-    "react/react-in-jsx-scope": "off"
+    // 基础代码风格
+    "quotes": ["error", "single"], // 强制单引号（与prettier配置一致）
+    "semi": ["error", "never"], // 禁止分号（与prettier配置一致）
+    "no-console": ["warn", { "allow": ["error", "warn"] }], // 警告未移除的console（允许error/warn）
+
+    // React相关
+    "react/prop-types": "off", // Taro组件通常使用TS，关闭prop-types检查
+    "react-hooks/rules-of-hooks": "error", // 强制Hooks规则
+    "react-hooks/exhaustive-deps": "warn", // 警告依赖项缺失
+
+    // Taro特定（覆盖taro/react默认规则）
+    "@tarojs/taro/no-unused-class-component": "warn" // 警告未使用的类组件
   }
 }
