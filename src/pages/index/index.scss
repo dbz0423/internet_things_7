@@ -123,7 +123,7 @@ $blur-intensity: 8px; // 玻璃模糊程度
     .status-card {
       background-color: rgba(50, 80, 130, 0.6); // 内嵌卡片背景，可微调对比度
       padding: 20px; // 增加内嵌卡片内边距
-      border-radius: $border-radius / 1.2; // 调整圆角
+      border-radius: calc($border-radius / 1.2);
       flex-basis: calc(50% - 12px); // 调整卡片宽度和间隙
       box-sizing: border-box;
       border: 1px solid rgba(255, 255, 255, 0.1);

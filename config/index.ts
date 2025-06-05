@@ -50,6 +50,7 @@ export default defineConfig<"vite">(async (merge, { command, mode }) => {
           rem2rpx: true,
           // 除了小程序这些，其他平台都 disable
           disabled:
+            typeof process === "undefined" ||
             process.env.TARO_ENV === "h5" ||
             process.env.TARO_ENV === "harmony" ||
             process.env.TARO_ENV === "rn",
@@ -105,9 +106,14 @@ export default defineConfig<"vite">(async (merge, { command, mode }) => {
     },
   };
 
-  process.env.BROWSERSLIST_ENV = process.env.NODE_ENV;
+  if (typeof process !== "undefined") {
+    process.env.BROWSERSLIST_ENV = process.env.NODE_ENV;
+  }
 
-  if (process.env.NODE_ENV === "development") {
+  if (
+    typeof process === "undefined" ||
+    process.env.NODE_ENV === "development"
+  ) {
     return merge({}, baseConfig, devConfig);
   }
   return merge({}, baseConfig, prodConfig);
