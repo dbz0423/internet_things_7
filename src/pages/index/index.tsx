@@ -1,12 +1,8 @@
 import { View, Text } from "@tarojs/components";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Taro from "@tarojs/taro";
 import "./index.scss";
 
-// 标签页数据
-const TABS = ["全屋", "客厅", "卧室", "办公室", "厨房", "浴室"];
-
-// 模拟不同标签页下的设备数据
-// 图标暂时用emoji，建议后续替换为SVG图标
 const devicesData = {
   全屋: [
     { id: "d1", icon: "💡", name: "智能灯泡", status: "在线" },
@@ -25,10 +21,64 @@ const devicesData = {
   办公室: [{ id: "d8", icon: "💻", name: "工作电脑", status: "在线" }],
   厨房: [],
   浴室: [],
+  // 可以根据实际获取到的场景名称添加更多默认数据或动态加载
 };
 
 export default function Index() {
-  const [activeTab, setActiveTab] = useState(TABS[0]);
+  const [tabs, setTabs] = useState<string[]>(["全屋"]);
+  const [activeTab, setActiveTab] = useState(tabs[0]);
+
+  useEffect(() => {
+    // 模拟从storage获取登录信息
+    const userInfo = Taro.getStorageSync("user");
+    const token = Taro.getStorageSync("token");
+
+    if (userInfo && userInfo.id && token) {
+      Taro.request({
+        url: `/api/user/${userInfo.id}/scenes`, // 请确保Taro的request配置了baseUrl，或者这里使用完整URL
+        method: "GET",
+        header: {
+          Authorization: `Bearer ${token}`,
+        },
+        success: function (res) {
+          if (res.statusCode === 200 && res.data && res.data.code === 0) {
+            // 假设后端成功code为0
+            const sceneNames = res.data.data.map((scene) => scene.name);
+            if (sceneNames.length > 0) {
+              setTabs(sceneNames);
+              setActiveTab(sceneNames[0]);
+            } else {
+              setTabs(["暂无场景"]); // 或者其他提示
+              setActiveTab("暂无场景");
+            }
+          } else {
+            // 处理请求错误或数据格式错误
+            console.error("获取场景列表失败:", res);
+            setTabs(["默认场景"]); // 出错时使用默认
+            setActiveTab("默认场景");
+          }
+        },
+        fail: function (err) {
+          console.error("请求场景列表接口失败:", err);
+          setTabs(["加载失败"]); // 网络错误等
+          setActiveTab("加载失败");
+        },
+      });
+    } else {
+      // 用户未登录或信息不全，可以跳转登录页或显示默认/提示
+      console.log("用户未登录或信息不全");
+      // setActiveTab(TABS[0]); // 保留默认的第一个tab
+    }
+  }, []); // 空依赖数组，表示只在组件挂载时执行一次
+
+  // activeTab可能在tabs更新后需要同步更新
+  useEffect(() => {
+    if (tabs.length > 0 && !tabs.includes(activeTab)) {
+      setActiveTab(tabs[0]);
+    } else if (tabs.length === 0 && activeTab !== "") {
+      setActiveTab(""); // 如果没有tab了，清空activeTab
+    }
+  }, [tabs, activeTab]);
 
   const currentDevices = devicesData[activeTab] || [];
 
@@ -53,6 +103,19 @@ export default function Index() {
 
   // 标签页内容渲染函数 - 现在是设备网格
   const renderTabContent = () => {
+    if (
+      tabs.length === 0 ||
+      activeTab === "" ||
+      activeTab === "暂无场景" ||
+      activeTab === "加载失败" ||
+      activeTab === "默认场景"
+    ) {
+      return (
+        <View className="p-4 text-center text-sky-400">
+          <Text>{activeTab || "请先添加场景"}</Text>
+        </View>
+      );
+    }
     if (currentDevices.length === 0) {
       return (
         <View className="p-4 text-center text-sky-400">
@@ -74,7 +137,7 @@ export default function Index() {
       <View className="p-4 pt-6 flex justify-between items-center bg-transparent">
         <View className="flex items-center">
           <Text className="text-xl font-semibold text-sky-50 mr-1">
-            3026455131的家
+            {Taro.getStorageSync("user")?.nickname || "我的家"}
           </Text>
           <Text className="text-sm text-sky-200">▼</Text>
         </View>
@@ -90,15 +153,14 @@ export default function Index() {
 
       {/* 顶部标签页导航 - 米家风格，深色主题 */}
       <View className="px-2 py-3 bg-transparent shadow-sm overflow-x-auto whitespace-nowrap no-scrollbar">
-        {TABS.map((tab) => (
+        {tabs.map((tab) => (
           <Text
             key={tab}
-            className={`inline-block px-4 py-2 text-sm font-medium rounded-lg cursor-pointer mr-2
-                        ${
-                          activeTab === tab
-                            ? "bg-sky-500 text-white shadow-md"
-                            : "text-sky-200 hover:bg-sky-700/[0.5] hover:text-sky-50"
-                        }`}
+            className={`inline-block px-4 py-2 text-sm font-medium rounded-lg cursor-pointer mr-2 ${
+              activeTab === tab
+                ? "bg-sky-500 text-white shadow-md"
+                : "text-sky-200 hover:bg-sky-700/[0.5] hover:text-sky-50"
+            }`}
             onClick={() => setActiveTab(tab)}
           >
             {tab}

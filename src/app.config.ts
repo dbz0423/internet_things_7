@@ -7,14 +7,14 @@ export default defineAppConfig({
   ],
   window: {
     backgroundTextStyle: "light",
-    navigationBarBackgroundColor: "#0f172a",
+    navigationBarBackgroundColor: "#162552",
     navigationBarTitleText: "智慧校园",
     navigationBarTextStyle: "white",
   },
   tabBar: {
     color: "#a0aec0",
     selectedColor: "#38bdf8",
-    backgroundColor: "#1e293b",
+    backgroundColor: "#162552",
     borderStyle: "black",
     list: [
       {
