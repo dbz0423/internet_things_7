@@ -283,17 +283,34 @@ export default function BurglarAlarmPage() {
         Taro.showToast({ title: "设备数据格式错误", icon: "none" });
         return;
       }
+
+      // 注意：这里的 alarmStatus 计算逻辑可能需要根据您的业务调整
+      // 此处假设 deviceOnline: 0 离线, 1 在线; deviceStatus: 0 撤防, 1 布防, 2 报警
+      // UI alarmStatus: 0 安全(撤防), 1 布防, 2 报警
+      let alarmStatus: 0 | 1 | 2 = 0; // 默认安全
+      if (backendDevice.deviceOnline === 0) {
+        // 如果设备离线，可以定义一个特定的UI状态，或沿用布防/撤防状态
+        // 这里我们简单处理，优先显示布防状态
+        alarmStatus = backendDevice.deviceStatus === 0 ? 0 : 1;
+      } else {
+        // 在线时
+        if (backendDevice.deviceStatus === 2) {
+          // 报警中
+          alarmStatus = 2;
+        } else if (backendDevice.deviceStatus === 1) {
+          // 布防
+          alarmStatus = 1;
+        } else {
+          // 撤防
+          alarmStatus = 0;
+        }
+      }
+
       setDevice({
         id: backendDevice.id,
         deviceId: backendDevice.deviceId,
         name: backendDevice.name,
-        // 0: 撤防, 1: 布防, 2: 报警
-        alarmStatus:
-          backendDevice.deviceStatus === 0
-            ? 0
-            : backendDevice.deviceStatus === 2
-            ? 2
-            : 1,
+        alarmStatus: alarmStatus,
         lastAlertTime: backendDevice.lastAlertTime || "未知时间",
       });
     } catch (error) {
@@ -306,9 +323,12 @@ export default function BurglarAlarmPage() {
   useEffect(() => {
     const router = Taro.getCurrentInstance().router;
     const deviceId = router?.params.deviceId;
-    if (deviceId) {
-      fetchDeviceData(deviceId);
+
+    if (!deviceId) {
+      return;
     }
+
+    fetchDeviceData(deviceId);
   }, [fetchDeviceData]);
 
   if (!device) {
