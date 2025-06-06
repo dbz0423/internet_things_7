@@ -3,6 +3,9 @@ export default defineAppConfig({
     "pages/login/index",
     "pages/index/index",
     "pages/device/index",
+    "pages/device/burglarAlarm/status/index",
+    "pages/device/burglarAlarm/settings/index",
+    "pages/device/burglarAlarm/logs/index",
     "pages/profile/index",
   ],
   window: {

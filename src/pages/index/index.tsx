@@ -5,13 +5,12 @@ import "./index.scss";
 
 // 后端返回的设备数据类型 (DeviceDTO)
 interface Device {
-  id: number; // 或 string，根据后端实际情况
+  id: number;
   deviceId: string;
   name: string;
   type: number;
   deviceStatus: number;
-  deviceOnline: 0 | 1; // 0为离线，1为在线
-  // 可能还有其他字段，如 createTime, updateTime 等，但前端卡片暂时不展示
+  deviceOnline: 0 | 1;
 }
 
 // 场景数据类型
@@ -20,7 +19,6 @@ interface Scene {
   name: string;
   // 可能还有其他字段
 }
-
 
 export default function Index() {
   const [scenes, setScenes] = useState<Scene[]>([]); // 存储从后端获取的场景列表
@@ -47,7 +45,7 @@ export default function Index() {
             const fetchedScenes: Scene[] = res.data.data || [];
             if (fetchedScenes.length > 0) {
               setScenes(fetchedScenes);
-              setActiveTab(fetchedScenes[0].name); // 默认选中第一个场景
+              setActiveTab(fetchedScenes[0].name);
             } else {
               setScenes([]);
               setActiveTab("暂无场景");
@@ -134,6 +132,24 @@ export default function Index() {
     }
   }, [activeTab, scenes, isLoadingScenes]);
 
+  // 点击设备卡片的处理函数
+  const handleDeviceClick = (device: Device) => {
+    // 检查是否为防盗报警器
+    if (device.deviceId && device.deviceId.startsWith("BurglarAlarm_")) {
+      Taro.navigateTo({
+        url: `/pages/device/burglarAlarm/status/index?deviceId=${device.deviceId}`,
+      });
+    } else {
+      // 对其他设备可以进行不同的处理，或暂时不处理
+      console.log("点击了其他设备:", device.name);
+      Taro.showToast({
+        title: `暂未开放'${device.name}'的详情页`,
+        icon: "none",
+        duration: 2000,
+      });
+    }
+  };
+
   // 设备卡片渲染
   const renderDeviceCard = (device: Device) => {
     const onlineStatus = device.deviceOnline === 1 ? "在线" : "离线";
@@ -152,6 +168,7 @@ export default function Index() {
       <View
         key={device.id || device.deviceId} // deviceId 应该更唯一
         className="bg-[rgba(45,55,72,0.5)] backdrop-blur-md border border-[rgba(255,255,255,0.15)] rounded-2xl p-4 shadow-lg flex flex-col items-start justify-between aspect-square hover:bg-[rgba(55,65,82,0.6)] transition-all cursor-pointer space-y-2"
+        onClick={() => handleDeviceClick(device)} // 添加点击事件
       >
         <Text className="text-3xl">{getDeviceIcon(device.type)}</Text>
         <View className="flex-grow" />

@@ -1,0 +1,134 @@
+.burglar-alarm-page {
+  padding: 20px;
+}
+
+// 状态指示器
+.status-indicator {
+  &.safe {
+    background: radial-gradient(
+      circle,
+      rgba(34, 197, 94, 0.5) 0%,
+      rgba(34, 197, 94, 0.1) 70%
+    );
+    border: 2px solid #22c55e;
+    box-shadow: 0 0 30px rgba(34, 197, 94, 0.6);
+  }
+  &.armed {
+    background: radial-gradient(
+      circle,
+      rgba(59, 130, 246, 0.5) 0%,
+      rgba(59, 130, 246, 0.1) 70%
+    );
+    border: 2px solid #3b82f6;
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.6);
+  }
+  &.alert {
+    background: radial-gradient(
+      circle,
+      rgba(239, 68, 68, 0.6) 0%,
+      rgba(239, 68, 68, 0.2) 70%
+    );
+    border: 2px solid #ef4444;
+    box-shadow: 0 0 40px #ef4444;
+    animation: pulse-alert 1.5s infinite;
+  }
+}
+
+@keyframes pulse-alert {
+  0% {
+    box-shadow: 0 0 30px rgba(239, 68, 68, 0.4);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 50px rgba(239, 68, 68, 0.8);
+    transform: scale(1.03);
+  }
+  100% {
+    box-shadow: 0 0 30px rgba(239, 68, 68, 0.4);
+    transform: scale(1);
+  }
+}
+
+// 玻璃卡片
+.glass-card {
+  background-color: rgba(40, 40, 70, 0.2);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.5rem;
+  padding: 1.25rem;
+}
+
+// 操作按钮
+.action-button {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f1f5f9;
+  padding: 0.85rem 1.25rem;
+  border-radius: 0.75rem;
+  transition: all 0.2s ease-in-out;
+  font-weight: 500;
+
+  &.arm {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+  }
+  &.disarm {
+    background: linear-gradient(135deg, #4b5563, #374151);
+    color: white;
+  }
+}
+
+// 底部Tab
+.tab-button {
+  color: #94a3b8;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  flex: 1;
+  text-align: center;
+  &.active {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-weight: 600;
+  }
+}
+
+// 记录项
+.log-item {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 0.75rem 0.25rem;
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+// 确保远程SVG图标在深色背景下可见
+Image {
+  &.lucide,
+  &.lucide-lg,
+  &.lucide-sm {
+    filter: invert(1);
+  }
+}
+
+.nav-button {
+  background-color: rgba(51, 65, 85, 0.5);
+  color: #bfdbfe;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease-in-out;
+
+  &:hover {
+    background-color: rgba(71, 85, 105, 0.7);
+  }
+
+  .lucide-sm {
+    width: 1rem;
+    height: 1rem;
+    color: #93c5fd;
+  }
+}
