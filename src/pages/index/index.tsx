@@ -1,6 +1,7 @@
 import { View, Text } from "@tarojs/components";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Taro from "@tarojs/taro";
+import { getScenes, getDevicesBySceneId } from "../../service/scene";
 import "./index.scss";
 
 // 后端返回的设备数据类型 (DeviceDTO)
@@ -26,43 +27,33 @@ export default function Index() {
   const [sceneDevices, setSceneDevices] = useState<Device[]>([]); // 当前场景下的设备列表
   const [isLoadingScenes, setIsLoadingScenes] = useState<boolean>(true);
   const [isLoadingDevices, setIsLoadingDevices] = useState<boolean>(false);
+  const socketTaskRef = useRef<Taro.SocketTask | null>(null);
 
   // 获取场景列表
   useEffect(() => {
-    const userInfo = Taro.getStorageSync("user");
-    const token = Taro.getStorageSync("token");
-
-    if (userInfo && userInfo.id && token) {
+    const fetchScenes = async () => {
       setIsLoadingScenes(true);
-      Taro.request({
-        url: `/api/user/${userInfo.id}/scenes`,
-        method: "GET",
-        header: {
-          Authorization: `Bearer ${token}`,
-        },
-        success: function (res) {
-          if (res.statusCode === 200 && res.data && res.data.code === 0) {
-            const fetchedScenes: Scene[] = res.data.data || [];
-            if (fetchedScenes.length > 0) {
-              setScenes(fetchedScenes);
-              setActiveTab(fetchedScenes[0].name);
-            } else {
-              setScenes([]);
-              setActiveTab("暂无场景");
-            }
-          } else {
-            console.error("获取场景列表失败:", res);
-            setActiveTab("场景加载失败");
-          }
-        },
-        fail: function (err) {
-          console.error("请求场景列表接口失败:", err);
-          setActiveTab("网络错误");
-        },
-        complete: function () {
-          setIsLoadingScenes(false);
-        },
-      });
+      try {
+        const fetchedScenes = await getScenes();
+        if (fetchedScenes.length > 0) {
+          setScenes(fetchedScenes);
+          setActiveTab(fetchedScenes[0].name);
+        } else {
+          setScenes([]);
+          setActiveTab("暂无场景");
+        }
+      } catch (error) {
+        console.error("获取场景列表失败:", error);
+        setActiveTab("场景加载失败");
+      } finally {
+        setIsLoadingScenes(false);
+      }
+    };
+
+    // 检查登录状态
+    const userInfo = Taro.getStorageSync("user");
+    if (userInfo && userInfo.id) {
+      fetchScenes();
     } else {
       console.log("用户未登录或信息不全");
       setActiveTab("请先登录");
@@ -86,51 +77,102 @@ export default function Index() {
 
     const currentScene = scenes.find((scene) => scene.name === activeTab);
     if (currentScene && currentScene.id) {
-      const sceneId = currentScene.id;
-      const token = Taro.getStorageSync("token");
-
-      if (!token) {
-        console.error("无法获取设备：token不存在");
-        setSceneDevices([]);
-        return;
-      }
-
-      setIsLoadingDevices(true);
-      setSceneDevices([]); // 清空旧设备列表
-
-      Taro.request({
-        url: `/api/scenes/${sceneId}/devices`,
-        method: "GET",
-        header: {
-          Authorization: `Bearer ${token}`,
-        },
-        success: function (res) {
-          if (res.statusCode === 200 && res.data && res.data.code === 0) {
-            const fetchedDevices: Device[] = res.data.data || [];
-            setSceneDevices(fetchedDevices);
-          } else {
-            console.error(
-              `获取场景 ${activeTab} (ID: ${sceneId}) 的设备列表失败:`,
-              res
-            );
-            setSceneDevices([]); // 出错时清空设备
-          }
-        },
-        fail: function (err) {
+      const fetchDevices = async (sceneId: number | string) => {
+        setIsLoadingDevices(true);
+        setSceneDevices([]); // 清空旧设备列表
+        try {
+          const fetchedDevices = await getDevicesBySceneId(sceneId);
+          setSceneDevices(fetchedDevices);
+        } catch (error) {
           console.error(
-            `请求场景 ${activeTab} (ID: ${sceneId}) 设备列表接口失败:`,
-            err
+            `获取场景 ${activeTab} (ID: ${sceneId}) 的设备列表失败:`,
+            error
           );
-          setSceneDevices([]);
-        },
-        complete: function () {
+          setSceneDevices([]); // 出错时清空设备
+        } finally {
           setIsLoadingDevices(false);
-        },
-      });
+        }
+      };
+
+      fetchDevices(currentScene.id);
     } else {
       setSceneDevices([]); // 如果找不到场景ID，也清空设备
     }
   }, [activeTab, scenes, isLoadingScenes]);
+
+  // WebSocket 实时更新
+  useEffect(() => {
+    // 只有当设备列表加载完成后才建立连接
+    if (isLoadingDevices || sceneDevices.length === 0) {
+      return;
+    }
+
+    // 防止重复连接
+    if (socketTaskRef.current && socketTaskRef.current.readyState < 2) {
+      return;
+    }
+
+    const connectSocket = async () => {
+      try {
+        const task = await Taro.connectSocket({
+          url: "ws://192.168.100.239:8082/ws/device/status",
+        });
+        socketTaskRef.current = task;
+
+        socketTaskRef.current.onOpen(() => {
+          console.log("WebSocket [首页] 连接已打开");
+        });
+
+        socketTaskRef.current.onMessage((res) => {
+          try {
+            const data = JSON.parse(res.data as string);
+            console.log("WebSocket [首页] 收到消息:", data);
+
+            // 更新设备列表中的状态
+            setSceneDevices((prevDevices) => {
+              return prevDevices.map((device) => {
+                if (device.deviceId === data.deviceId) {
+                  console.log(`匹配到设备 ${device.deviceId}, 更新状态...`);
+                  // 返回一个*新*的设备对象
+                  return {
+                    ...device,
+                    deviceOnline: data.deviceOnline,
+                    deviceStatus: data.deviceStatus,
+                  };
+                }
+                return device; // 未匹配的设备返回原样
+              });
+            });
+          } catch (e) {
+            console.error("WebSocket [首页] 解析消息失败:", e);
+          }
+        });
+
+        socketTaskRef.current.onError((err) => {
+          console.error("WebSocket [首页] 连接出错:", err);
+          socketTaskRef.current = null;
+        });
+
+        socketTaskRef.current.onClose((res) => {
+          console.log("WebSocket [首页] 连接已关闭", res);
+          socketTaskRef.current = null;
+        });
+      } catch (error) {
+        console.error("WebSocket [首页] 连接失败:", error);
+      }
+    };
+
+    connectSocket();
+
+    return () => {
+      if (socketTaskRef.current) {
+        console.log("WebSocket [首页] 关闭连接");
+        socketTaskRef.current.close({});
+        socketTaskRef.current = null;
+      }
+    };
+    // 依赖项：当场景或设备列表加载状态变化时，重新评估是否需要连接
+  }, [isLoadingDevices, sceneDevices]);
 
   // 点击设备卡片的处理函数
   const handleDeviceClick = (device: Device) => {
