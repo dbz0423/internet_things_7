@@ -1,59 +1,217 @@
 import { View, Text } from "@tarojs/components";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Taro from "@tarojs/taro";
 import "./index.scss";
 
-// 标签页数据
-const TABS = ["全屋", "客厅", "卧室", "办公室", "厨房", "浴室"];
+// 后端返回的设备数据类型 (DeviceDTO)
+interface Device {
+  id: number;
+  deviceId: string;
+  name: string;
+  type: number;
+  deviceStatus: number;
+  deviceOnline: 0 | 1;
+}
 
-// 模拟不同标签页下的设备数据
-// 图标暂时用emoji，建议后续替换为SVG图标
-const devicesData = {
-  全屋: [
-    { id: "d1", icon: "💡", name: "智能灯泡", status: "在线" },
-    { id: "d2", icon: "🚪", name: "门窗传感器", status: "已关" },
-    { id: "d3", icon: "💨", name: "空气净化器", status: "自动模式" },
-    { id: "d4", icon: "🌡️", name: "环境监测仪", status: "24°C | 60%" },
-  ],
-  客厅: [
-    { id: "d5", icon: "📺", name: "智能电视", status: "已关闭" },
-    { id: "d6", icon: "🎶", name: "智能音箱", status: "播放中" },
-  ],
-  卧室: [
-    { id: "d1", icon: "💡", name: "卧室灯", status: "50%亮度" },
-    { id: "d7", icon: "😴", name: "睡眠监测器", status: "小王 熟睡" },
-  ],
-  办公室: [{ id: "d8", icon: "💻", name: "工作电脑", status: "在线" }],
-  厨房: [],
-  浴室: [],
-};
+// 场景数据类型
+interface Scene {
+  id: number; // 或 string
+  name: string;
+  // 可能还有其他字段
+}
 
 export default function Index() {
-  const [activeTab, setActiveTab] = useState(TABS[0]);
+  const [scenes, setScenes] = useState<Scene[]>([]); // 存储从后端获取的场景列表
+  const [activeTab, setActiveTab] = useState<string>(""); // 当前选中的场景名称
+  const [sceneDevices, setSceneDevices] = useState<Device[]>([]); // 当前场景下的设备列表
+  const [isLoadingScenes, setIsLoadingScenes] = useState<boolean>(true);
+  const [isLoadingDevices, setIsLoadingDevices] = useState<boolean>(false);
 
-  const currentDevices = devicesData[activeTab] || [];
+  // 获取场景列表
+  useEffect(() => {
+    const userInfo = Taro.getStorageSync("user");
+    const token = Taro.getStorageSync("token");
+
+    if (userInfo && userInfo.id && token) {
+      setIsLoadingScenes(true);
+      Taro.request({
+        url: `/api/user/${userInfo.id}/scenes`,
+        method: "GET",
+        header: {
+          Authorization: `Bearer ${token}`,
+        },
+        success: function (res) {
+          if (res.statusCode === 200 && res.data && res.data.code === 0) {
+            const fetchedScenes: Scene[] = res.data.data || [];
+            if (fetchedScenes.length > 0) {
+              setScenes(fetchedScenes);
+              setActiveTab(fetchedScenes[0].name);
+            } else {
+              setScenes([]);
+              setActiveTab("暂无场景");
+            }
+          } else {
+            console.error("获取场景列表失败:", res);
+            setActiveTab("场景加载失败");
+          }
+        },
+        fail: function (err) {
+          console.error("请求场景列表接口失败:", err);
+          setActiveTab("网络错误");
+        },
+        complete: function () {
+          setIsLoadingScenes(false);
+        },
+      });
+    } else {
+      console.log("用户未登录或信息不全");
+      setActiveTab("请先登录");
+      setIsLoadingScenes(false);
+    }
+  }, []);
+
+  // 根据选中的场景 (activeTab) 获取设备列表
+  useEffect(() => {
+    if (
+      !activeTab ||
+      isLoadingScenes ||
+      activeTab === "暂无场景" ||
+      activeTab === "场景加载失败" ||
+      activeTab === "网络错误" ||
+      activeTab === "请先登录"
+    ) {
+      setSceneDevices([]);
+      return;
+    }
+
+    const currentScene = scenes.find((scene) => scene.name === activeTab);
+    if (currentScene && currentScene.id) {
+      const sceneId = currentScene.id;
+      const token = Taro.getStorageSync("token");
+
+      if (!token) {
+        console.error("无法获取设备：token不存在");
+        setSceneDevices([]);
+        return;
+      }
+
+      setIsLoadingDevices(true);
+      setSceneDevices([]); // 清空旧设备列表
+
+      Taro.request({
+        url: `/api/scenes/${sceneId}/devices`,
+        method: "GET",
+        header: {
+          Authorization: `Bearer ${token}`,
+        },
+        success: function (res) {
+          if (res.statusCode === 200 && res.data && res.data.code === 0) {
+            const fetchedDevices: Device[] = res.data.data || [];
+            setSceneDevices(fetchedDevices);
+          } else {
+            console.error(
+              `获取场景 ${activeTab} (ID: ${sceneId}) 的设备列表失败:`,
+              res
+            );
+            setSceneDevices([]); // 出错时清空设备
+          }
+        },
+        fail: function (err) {
+          console.error(
+            `请求场景 ${activeTab} (ID: ${sceneId}) 设备列表接口失败:`,
+            err
+          );
+          setSceneDevices([]);
+        },
+        complete: function () {
+          setIsLoadingDevices(false);
+        },
+      });
+    } else {
+      setSceneDevices([]); // 如果找不到场景ID，也清空设备
+    }
+  }, [activeTab, scenes, isLoadingScenes]);
+
+  // 点击设备卡片的处理函数
+  const handleDeviceClick = (device: Device) => {
+    // 检查是否为防盗报警器
+    if (device.deviceId && device.deviceId.startsWith("BurglarAlarm_")) {
+      Taro.navigateTo({
+        url: `/pages/device/burglarAlarm/status/index?deviceId=${device.deviceId}`,
+      });
+    } else {
+      // 对其他设备可以进行不同的处理，或暂时不处理
+      console.log("点击了其他设备:", device.name);
+      Taro.showToast({
+        title: `暂未开放'${device.name}'的详情页`,
+        icon: "none",
+        duration: 2000,
+      });
+    }
+  };
 
   // 设备卡片渲染
-  const renderDeviceCard = (device) => (
-    <View
-      key={device.id}
-      className="bg-[rgba(45,55,72,0.5)] backdrop-blur-md border border-[rgba(255,255,255,0.15)] rounded-2xl p-4 shadow-lg flex flex-col items-start justify-between aspect-square hover:bg-[rgba(55,65,82,0.6)] transition-all cursor-pointer space-y-2"
-      // aspect-square 尝试保持卡片为方形，内容较多时可能需要调整高度或min-height
-    >
-      <Text className="text-3xl">{device.icon}</Text>
-      <View className="flex-grow" />{" "}
-      {/* 用于将下面的文本推到底部，如果内容固定可以不用 */}
-      <View>
-        <Text className="block text-md font-semibold text-sky-50">
-          {device.name}
-        </Text>
-        <Text className="block text-xs text-sky-300">{device.status}</Text>
-      </View>
-    </View>
-  );
+  const renderDeviceCard = (device: Device) => {
+    const onlineStatus = device.deviceOnline === 1 ? "在线" : "离线";
+    const statusColor =
+      device.deviceOnline === 1 ? "text-green-400" : "text-sky-300";
+    // 暂时使用固定图标或根据类型简单映射
+    const getDeviceIcon = (type: number) => {
+      // TODO: 根据设备类型返回不同图标, 例如 type 1 = 💡, type 2 = 🚪 etc.
+      // 示例：
+      if (type === 1) return "💡";
+      if (type === 2) return "🚪";
+      return "📱"; // 默认图标
+    };
 
-  // 标签页内容渲染函数 - 现在是设备网格
+    return (
+      <View
+        key={device.id || device.deviceId} // deviceId 应该更唯一
+        className="bg-[rgba(45,55,72,0.5)] backdrop-blur-md border border-[rgba(255,255,255,0.15)] rounded-2xl p-4 shadow-lg flex flex-col items-start justify-between aspect-square hover:bg-[rgba(55,65,82,0.6)] transition-all cursor-pointer space-y-2"
+        onClick={() => handleDeviceClick(device)} // 添加点击事件
+      >
+        <Text className="text-3xl">{getDeviceIcon(device.type)}</Text>
+        <View className="flex-grow" />
+        <View>
+          <Text className="block text-md font-semibold text-sky-50">
+            {device.name}
+          </Text>
+          <Text className={`block text-xs ${statusColor}`}>{onlineStatus}</Text>
+        </View>
+      </View>
+    );
+  };
+
+  // 标签页内容渲染函数
   const renderTabContent = () => {
-    if (currentDevices.length === 0) {
+    if (isLoadingScenes) {
+      return (
+        <View className="p-4 text-center text-sky-400">
+          <Text>正在加载场景...</Text>
+        </View>
+      );
+    }
+    if (
+      activeTab === "暂无场景" ||
+      activeTab === "场景加载失败" ||
+      activeTab === "网络错误" ||
+      activeTab === "请先登录" ||
+      scenes.length === 0
+    ) {
+      return (
+        <View className="p-4 text-center text-sky-400">
+          <Text>{activeTab || "请先添加或选择场景"}</Text>
+        </View>
+      );
+    }
+    if (isLoadingDevices) {
+      return (
+        <View className="p-4 text-center text-sky-400">
+          <Text>正在加载设备...</Text>
+        </View>
+      );
+    }
+    if (sceneDevices.length === 0) {
       return (
         <View className="p-4 text-center text-sky-400">
           <Text>此空间暂无设备</Text>
@@ -62,19 +220,19 @@ export default function Index() {
     }
     return (
       <View className="grid grid-cols-2 gap-4 p-4">
-        {currentDevices.map(renderDeviceCard)}
+        {sceneDevices.map(renderDeviceCard)}
       </View>
     );
   };
 
+  const sceneTabs = scenes.map((s) => s.name);
+
   return (
-    // 整体背景和文字颜色，采用HTML原型中的深色渐变主题
     <View className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-sky-100 flex flex-col">
-      {/* 头部区域 - 米家风格，深色主题 */}
       <View className="p-4 pt-6 flex justify-between items-center bg-transparent">
         <View className="flex items-center">
           <Text className="text-xl font-semibold text-sky-50 mr-1">
-            3026455131的家
+            {Taro.getStorageSync("user")?.nickname || "我的家"}
           </Text>
           <Text className="text-sm text-sky-200">▼</Text>
         </View>
@@ -88,35 +246,33 @@ export default function Index() {
         </View>
       </View>
 
-      {/* 顶部标签页导航 - 米家风格，深色主题 */}
       <View className="px-2 py-3 bg-transparent shadow-sm overflow-x-auto whitespace-nowrap no-scrollbar">
-        {TABS.map((tab) => (
-          <Text
-            key={tab}
-            className={`inline-block px-4 py-2 text-sm font-medium rounded-lg cursor-pointer mr-2
-                        ${
-                          activeTab === tab
-                            ? "bg-sky-500 text-white shadow-md"
-                            : "text-sky-200 hover:bg-sky-700/[0.5] hover:text-sky-50"
-                        }`}
-            onClick={() => setActiveTab(tab)}
-          >
-            {tab}
+        {isLoadingScenes && sceneTabs.length === 0 ? (
+          <Text className="inline-block px-4 py-2 text-sm font-medium text-sky-200">
+            场景加载中...
           </Text>
-        ))}
+        ) : sceneTabs.length > 0 ? (
+          sceneTabs.map((tabName) => (
+            <Text
+              key={tabName}
+              className={`inline-block px-4 py-2 text-sm font-medium rounded-lg cursor-pointer mr-2 ${
+                activeTab === tabName
+                  ? "bg-sky-500 text-white shadow-md"
+                  : "text-sky-200 hover:bg-sky-700/[0.5] hover:text-sky-50"
+              }`}
+              onClick={() => setActiveTab(tabName)}
+            >
+              {tabName}
+            </Text>
+          ))
+        ) : (
+          <Text className="inline-block px-4 py-2 text-sm font-medium text-sky-200">
+            {activeTab || "无可用场景"}
+          </Text>
+        )}
       </View>
 
-      {/* 主内容区域 - 设备网格 */}
       <View className="flex-grow overflow-y-auto">{renderTabContent()}</View>
-
-      {/* 底部导航栏 - 暂时不实现，若需要可在此添加 */}
-      {/* <View className='h-16 bg-red-500'>底部导航</View> */}
     </View>
   );
 }
-
-// 辅助类，用于隐藏滚动条 (在Taro H5中可能需要针对性处理)
-// Tailwind本身没有直接的 no-scrollbar，但可以通过插件或自定义CSS实现
-// 对于小程序，overflow-x-auto 通常不会显示滚动条
-// .no-scrollbar::-webkit-scrollbar { display: none; }
-// .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

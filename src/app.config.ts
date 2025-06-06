@@ -3,18 +3,21 @@ export default defineAppConfig({
     "pages/login/index",
     "pages/index/index",
     "pages/device/index",
+    "pages/device/burglarAlarm/status/index",
+    "pages/device/burglarAlarm/settings/index",
+    "pages/device/burglarAlarm/logs/index",
     "pages/profile/index",
   ],
   window: {
     backgroundTextStyle: "light",
-    navigationBarBackgroundColor: "#0f172a",
+    navigationBarBackgroundColor: "#162552",
     navigationBarTitleText: "智慧校园",
     navigationBarTextStyle: "white",
   },
   tabBar: {
     color: "#a0aec0",
     selectedColor: "#38bdf8",
-    backgroundColor: "#1e293b",
+    backgroundColor: "#162552",
     borderStyle: "black",
     list: [
       {
