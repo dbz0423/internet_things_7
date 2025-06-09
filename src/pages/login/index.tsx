@@ -1,10 +1,11 @@
-import { View, Text, Image, Input, Button } from "@tarojs/components";
+import { View, Text, Image, Input, Button, Picker } from "@tarojs/components";
 import { useState, useEffect } from "react";
 import {
   sendCode,
   mobileLogin,
   getUserInfo,
   accountLogin,
+  getTenants,
 } from "../../service/user";
 import { isPhoneAvailable, isCodeAvailable } from "../../utils/validate";
 import Taro from "@tarojs/taro";
@@ -26,7 +27,21 @@ export default function Login() {
     username: "",
     password: "",
   });
+
+  const initTenant = async () => {
+    const res = await getTenants();
+    if (res.code === 0) {
+      setCampuses(res.data);
+    } else {
+      Taro.showToast({
+        title: res.msg,
+        icon: "none",
+      });
+    }
+  };
+
   useEffect(() => {
+    initTenant();
     let interval;
     if (timer) {
       interval = setInterval(() => {
@@ -86,6 +101,7 @@ export default function Login() {
       const res = await accountLogin({
         username: usernameForm.username,
         password: usernameForm.password,
+        tenantId: selectedCampusId,
       });
       if (res.code === 0) {
         Taro.setStorageSync("token", res.data.accessToken);
@@ -110,6 +126,12 @@ export default function Login() {
         icon: "error",
       });
     }
+  };
+
+  const toRegister = async () => {
+    Taro.navigateTo({
+      url: "/pages/register/index",
+    });
   };
 
   const dispatch = useAppDispatch();
@@ -171,6 +193,13 @@ export default function Login() {
   };
   const [activeTab, setActiveTab] = useState("username");
 
+  const [selectedCampus, setSelectedCampus] = useState("");
+  const [campuses, setCampuses] = useState([
+    { name: "浙江大学", id: "1" },
+    { name: "杭州电子科技大学", id: "2" },
+    { name: "浙江工业大学", id: "3" },
+  ]);
+  const [selectedCampusId, setSelectedCampusId] = useState(0);
   return (
     <View className="login-container">
       <View className="logo">
@@ -182,6 +211,21 @@ export default function Login() {
 
       <Text className="title">欢迎回来！</Text>
       <Text className="subtitle">登录以继续管理您的智能校园设备</Text>
+
+      <View className="input-group campus-selector">
+        <Picker
+          mode="selector"
+          range={campuses}
+          rangeKey="name"
+          onChange={(e) => {
+            const index = e.detail.value;
+            setSelectedCampus(campuses[index].name);
+            setSelectedCampusId(campuses[index].id);
+          }}
+        >
+          <View className="picker">{selectedCampus || "请选择所在学校"}</View>
+        </Picker>
+      </View>
 
       {activeTab === "username" ? (
         <>
@@ -253,9 +297,11 @@ export default function Login() {
         登录
       </Button>
 
-      <View className="register-link">
+      <View className="login-link">
         <Text>没有账户？</Text>
-        <Text className="register-text">立即注册</Text>
+        <Text className="login-text" onClick={toRegister}>
+          立即注册
+        </Text>
       </View>
     </View>
   );

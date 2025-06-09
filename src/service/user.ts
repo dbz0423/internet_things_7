@@ -44,3 +44,29 @@ export const updateUser = (data: UserDTO) => {
     data,
   });
 };
+
+export const register = (data: RegisterDTO) => {
+  console.log(
+    "Taro.getStorageSync('token')",
+    http<string>({
+      method: "POST",
+      url: `/api/user/register`,
+      data,
+    }).then((res) => {
+      console.log("res", res);
+    })
+  );
+
+  return http<string>({
+    method: "POST",
+    url: `/api/user/register`,
+    data,
+  });
+};
+
+export const getTenants = () => {
+  return http<string>({
+    method: "GET",
+    url: `/api/user/getTenants`,
+  });
+};
