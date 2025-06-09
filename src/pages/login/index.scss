@@ -19,6 +19,14 @@
     margin-top: 35px;
   }
 
+  .campus-selector {
+    .picker {
+      @apply w-full pl-10 pr-3 py-3 text-gray-100;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+    }
+  }
+
   .input-group {
     @apply relative w-full max-w-sm mb-6 p-4 rounded-lg bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20;
     width: 90%;
@@ -46,7 +54,7 @@
            transform hover:scale-105 justify-center items-center flex;
   }
 
-  .register-link {
+  .login-link {
     margin-top: 50px;
     @apply text-blue-300 hover:text-blue-100 transition duration-200;
   }

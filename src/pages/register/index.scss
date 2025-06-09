@@ -1,1 +1,63 @@
-@import "../../pages/login/index.scss"; // 复用登录页样式
+.register-container {
+  @apply min-h-screen flex flex-col items-center justify-center;
+  background: linear-gradient(to bottom right, #1e40af, #1b2747);
+  padding: 10px;
+  width: 100%;
+
+  .title {
+    @apply text-3xl font-bold text-white text-center mb-4;
+    margin-bottom: 50px;
+  }
+
+  .subtitle {
+    @apply text-blue-200 text-center mb-8;
+    margin-bottom: 100px;
+  }
+
+  .campus-selector {
+    .picker {
+      @apply w-full pl-10 pr-3 py-3 text-gray-100;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+    }
+  }
+
+  .input-group {
+    @apply relative w-full max-w-sm mb-6 p-4 rounded-lg
+             bg-white bg-opacity-10 backdrop-blur-md
+             border border-white border-opacity-20;
+    width: 90%;
+    height: 80%;
+
+    input {
+      @apply w-full pl-10 pr-3 py-3 rounded-lg bg-white bg-opacity-20
+               backdrop-blur-md text-gray-100 border-none
+               focus:ring-2 focus:ring-blue-400 outline-none
+               transition duration-200;
+    }
+
+    .code-button {
+      @apply absolute right-3 top-1/2 transform -translate-y-1/2
+               px-3 py-1 bg-blue-500 text-white text-sm rounded-md;
+      &:disabled {
+        @apply bg-blue-400 opacity-70;
+      }
+    }
+  }
+
+  .link-group {
+    @apply flex justify-between w-full max-w-sm mb-6 text-sm  text-blue-300 hover:text-blue-100 transition duration-200;
+    width: 90%;
+  }
+
+  .register-button {
+    @apply w-11/12 h-12 max-w-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold
+           py-3 rounded-lg shadow-lg hover:shadow-xl transition duration-200
+           transform hover:scale-105 justify-center items-center flex;
+  }
+
+  .register-link {
+    margin-top: 50px;
+    @apply text-blue-300 hover:text-blue-100 transition duration-200;
+  }
+}
