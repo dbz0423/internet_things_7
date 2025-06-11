@@ -1,8 +1,8 @@
-import { View, Text, Image, Button } from "@tarojs/components";
+import { View, Text, Image } from "@tarojs/components";
 import { useState, useEffect, useCallback } from "react";
 import Taro, { useLoad } from "@tarojs/taro";
 import { getDeviceDetails, setDeviceMode } from "../../../../service/device";
-import { AtIcon, AtList, AtListItem, AtCard, AtButton } from "taro-ui";
+import { AtIcon } from "taro-ui";
 import { getAlarmLogPage } from "../../../../service/log"; // 引入获取日志的服务
 import "./index.scss";
 
@@ -16,14 +16,6 @@ interface BurglarAlarmDevice {
   lastAlertTime?: string;
 }
 
-// 记录数据类型
-interface ActivityLog {
-  id: number;
-  icon: string;
-  title: string;
-  time: string;
-}
-
 // 定义日志项的数据结构，以便复用
 interface LogItem {
   id: number;
@@ -34,13 +26,19 @@ interface LogItem {
   deviceId: string;
 }
 
-// 子组件：只负责显示状态和触发操作
+// 子组件：负责显示状态、触发操作和展示日志
 const StatusView = ({
   device,
   onRefresh,
+  latestLogs,
+  getIconInfo,
+  navigateToLogs,
 }: {
   device: BurglarAlarmDevice;
   onRefresh: () => void;
+  latestLogs: LogItem[];
+  getIconInfo: (level?: string | null) => { icon: string; color: string };
+  navigateToLogs: () => void;
 }) => {
   const [loading, setLoading] = useState(false);
   const [currentModeName, setCurrentModeName] = useState<string | null>(null);
@@ -106,6 +104,36 @@ const StatusView = ({
     }
   };
 
+  const handleSetArmStatus = async (modeValue: string) => {
+    if (loading) return;
+    setLoading(true);
+    Taro.showLoading({ title: "请稍候..." });
+    try {
+      await setDeviceMode(device.deviceId, "BurglarAlarm", modeValue);
+      Taro.showToast({
+        title: modeValue === "0" ? "撤防成功" : "布防成功",
+        icon: "success",
+      });
+
+      // 手动更新模式名称以确保UI实时刷新
+      if (modeValue !== "0") {
+        const savedMode = Taro.getStorageSync("selectedMode");
+        if (savedMode && savedMode.name) {
+          setCurrentModeName(savedMode.name);
+        }
+      } else {
+        setCurrentModeName(null);
+      }
+
+      onRefresh(); // 操作成功后刷新数据
+    } catch (error) {
+      Taro.showToast({ title: error.message || "操作失败", icon: "none" });
+    } finally {
+      Taro.hideLoading();
+      setLoading(false);
+    }
+  };
+
   const handleArm = async () => {
     const mode = Taro.getStorageSync("selectedMode");
     if (!mode || !mode.value) {
@@ -123,121 +151,136 @@ const StatusView = ({
     await handleSetArmStatus("0");
   };
 
-  const handleSetArmStatus = async (modeValue: string) => {
-    if (loading) return;
-    setLoading(true);
-    Taro.showLoading({ title: "请稍候..." });
-    try {
-      await setDeviceMode(device.deviceId, "BurglarAlarm", modeValue);
-      Taro.showToast({
-        title: modeValue === "0" ? "撤防成功" : "布防成功",
-        icon: "success",
-      });
-
-      setTimeout(() => {
-        onRefresh(); // 刷新设备状态
-      }, 1000);
-    } catch (error) {
-      Taro.showToast({ title: error.message || "操作失败", icon: "none" });
-    } finally {
-      Taro.hideLoading();
-      setLoading(false);
-    }
-  };
-
   const statusInfo = getStatusInfo();
 
   return (
-    <View className="flex flex-col items-center justify-center space-y-6 my-4 w-full">
-      {/* 状态指示器 */}
-      <View
-        className={`${getStatusIndicatorClass()} w-48 h-48 rounded-full flex flex-col items-center justify-center p-4 text-center`}
-      >
-        <Image
-          src={statusInfo.icon}
-          className="lucide-lg mb-2"
-          style={{ width: "60px", height: "60px" }}
-        />
-        <Text className={`text-xl font-bold ${statusInfo.color}`}>
-          {statusInfo.text}
-        </Text>
-        {currentModeName && (
-          <Text
-            className={`text-sm font-semibold ${statusInfo.color.replace(
-              "200",
-              "300"
-            )} mt-1`}
-          >
-            模式: {currentModeName}
+    <>
+      <View className="flex flex-col items-center justify-center space-y-6 my-4 w-full">
+        {/* 状态指示器 */}
+        <View
+          className={`${getStatusIndicatorClass()} w-48 h-48 rounded-full flex flex-col items-center justify-center p-4 text-center`}
+        >
+          <Image
+            src={statusInfo.icon}
+            className="lucide-lg mb-2"
+            style={{ width: "60px", height: "60px" }}
+          />
+          <Text className={`text-xl font-bold ${statusInfo.color}`}>
+            {statusInfo.text}
           </Text>
-        )}
-        <Text className={`text-xs ${statusInfo.color.replace("200", "300")}`}>
-          {statusInfo.subtext}
-        </Text>
+          {currentModeName && (
+            <Text
+              className={`text-sm font-semibold ${statusInfo.color.replace(
+                "200",
+                "300"
+              )} mt-1`}
+            >
+              模式: {currentModeName}
+            </Text>
+          )}
+          <Text className={`text-xs ${statusInfo.color.replace("200", "300")}`}>
+            {statusInfo.subtext}
+          </Text>
+        </View>
+
+        {/* 布防/撤防按钮 */}
+        <View className="grid grid-cols-2 gap-4 w-full max-w-xs">
+          <View
+            className={`action-button arm col-span-1 py-4 flex items-center justify-center space-x-2 ${
+              loading ? "opacity-50" : ""
+            }`}
+            onClick={handleArm}
+          >
+            <Image
+              src="https://unpkg.com/lucide-static@latest/icons/shield.svg"
+              className="lucide w-5 h-5"
+              style={{ width: "20px", height: "20px" }}
+            />
+            <Text>布 防</Text>
+          </View>
+          <View
+            className={`action-button disarm col-span-1 py-4 flex items-center justify-center space-x-2 ${
+              loading ? "opacity-50" : ""
+            }`}
+            onClick={handleDisarm}
+          >
+            <Image
+              src="https://unpkg.com/lucide-static@latest/icons/shield-off.svg"
+              className="lucide w-5 h-5"
+              style={{ width: "20px", height: "20px" }}
+            />
+            <Text>撤 防</Text>
+          </View>
+        </View>
+
+        {/* 导航到其他页面 */}
+        <View className="grid grid-cols-2 gap-4 w-full max-w-xs mt-4">
+          <View className="nav-button" onClick={navigateToLogs}>
+            <Image
+              src="https://unpkg.com/lucide-static@latest/icons/history.svg"
+              className="lucide-sm"
+            />
+            <Text>活动记录</Text>
+          </View>
+          <View
+            className="nav-button"
+            onClick={() =>
+              Taro.navigateTo({
+                url: `/pages/device/burglarAlarm/settings/index?deviceId=${device.deviceId}`,
+              })
+            }
+          >
+            <Image
+              src="https://unpkg.com/lucide-static@latest/icons/settings-2.svg"
+              className="lucide-sm"
+            />
+            <Text>布防设置</Text>
+          </View>
+        </View>
       </View>
 
-      {/* 布防/撤防按钮 */}
-      <View className="grid grid-cols-2 gap-4 w-full max-w-xs">
-        <View
-          className={`action-button arm col-span-1 py-4 flex items-center justify-center space-x-2 ${
-            loading ? "opacity-50" : ""
-          }`}
-          onClick={handleArm}
-        >
-          <Image
-            src="https://unpkg.com/lucide-static@latest/icons/shield.svg"
-            className="lucide w-5 h-5"
-            style={{ width: "20px", height: "20px" }}
-          />
-          <Text>布 防</Text>
+      {/* -- START: Refined Latest Logs List -- */}
+      <View className="latest-logs-container">
+        <View className="logs-header">
+          <Text className="logs-title">最近活动记录</Text>
+          {latestLogs.length > 0 && (
+            <Text className="view-all-link" onClick={navigateToLogs}>
+              查看全部 →
+            </Text>
+          )}
         </View>
-        <View
-          className={`action-button disarm col-span-1 py-4 flex items-center justify-center space-x-2 ${
-            loading ? "opacity-50" : ""
-          }`}
-          onClick={handleDisarm}
-        >
-          <Image
-            src="https://unpkg.com/lucide-static@latest/icons/shield-off.svg"
-            className="lucide w-5 h-5"
-            style={{ width: "20px", height: "20px" }}
-          />
-          <Text>撤 防</Text>
-        </View>
-      </View>
 
-      {/* 导航到其他页面 */}
-      <View className="grid grid-cols-2 gap-4 w-full max-w-xs mt-4">
-        <View
-          className="nav-button"
-          onClick={() =>
-            Taro.navigateTo({
-              url: `/pages/alarm-log/index?deviceId=${device.deviceId}`,
-            })
-          }
-        >
-          <Image
-            src="https://unpkg.com/lucide-static@latest/icons/history.svg"
-            className="lucide-sm"
-          />
-          <Text>报警日志</Text>
-        </View>
-        <View
-          className="nav-button"
-          onClick={() =>
-            Taro.navigateTo({
-              url: `/pages/device/burglarAlarm/settings/index?deviceId=${device.deviceId}`,
-            })
-          }
-        >
-          <Image
-            src="https://unpkg.com/lucide-static@latest/icons/settings-2.svg"
-            className="lucide-sm"
-          />
-          <Text>布防设置</Text>
+        <View className="log-list-wrapper">
+          {latestLogs.length > 0 ? (
+            latestLogs.map((log) => (
+              <View key={log.id} className="log-item" onClick={navigateToLogs}>
+                <View className="log-icon">
+                  <AtIcon
+                    value={getIconInfo(log.eventLevel).icon}
+                    size="24"
+                    color={getIconInfo(log.eventLevel).color}
+                  />
+                </View>
+                <View className="log-content">
+                  <View className="log-header">
+                    <Text className="log-title">{log.eventTypeName}</Text>
+                    <Text className="log-time">
+                      {new Date(log.eventTime).toLocaleString()}
+                    </Text>
+                  </View>
+                  <Text className="log-description">{log.logContent}</Text>
+                </View>
+              </View>
+            ))
+          ) : (
+            <View className="log-item">
+              <Text className="log-description">暂无相关日志</Text>
+            </View>
+          )}
         </View>
       </View>
-    </View>
+      {/* -- END: Refined Latest Logs List -- */}
+    </>
   );
 };
 
@@ -281,33 +324,69 @@ export default function BurglarAlarmPage() {
     }
   };
 
-  const fetchDeviceData = useCallback(async (deviceId: string) => {
-    setIsLoading(true);
-    try {
-      const backendDevice = await getDeviceDetails(deviceId);
-      if (backendDevice.code === 0 && backendDevice.data) {
-        const deviceData = backendDevice.data;
-        setDevice({
-          id: deviceData.id,
-          deviceId: deviceData.deviceId,
-          name: deviceData.name,
-          alarmStatus: deviceData.alarmStatus || 0,
-          lastAlertTime: deviceData.lastAlertTime || "未知时间",
+  const fetchDeviceData = useCallback(
+    async (deviceId: string) => {
+      try {
+        const backendDeviceResp = await getDeviceDetails(deviceId);
+        if (backendDeviceResp.code === 0 && backendDeviceResp.data) {
+          const deviceData = backendDeviceResp.data;
+
+          // 根据用户提供的可靠逻辑，从 deviceStatus 和 deviceOnline 推导 alarmStatus
+          // UI alarmStatus: 0 安全(撤防), 1 布防, 2 报警
+          let alarmStatus: 0 | 1 | 2 = 0; // 默认安全
+
+          // 假设 deviceData 包含 deviceOnline 和 deviceStatus 字段
+          if (deviceData.deviceOnline === 0) {
+            // 如果设备离线，优先显示布防状态
+            alarmStatus = deviceData.deviceStatus === 0 ? 0 : 1;
+          } else {
+            // 在线时
+            if (deviceData.deviceStatus === 2) {
+              // 报警中
+              alarmStatus = 2;
+            } else if (deviceData.deviceStatus === 1) {
+              // 布防
+              alarmStatus = 1;
+            } else {
+              // 撤防
+              alarmStatus = 0;
+            }
+          }
+
+          setDevice({
+            id: deviceData.id,
+            deviceId: deviceData.deviceId,
+            name: deviceData.name,
+            alarmStatus: alarmStatus, // 使用计算出的状态
+            lastAlertTime: deviceData.lastAlertTime || "未知时间",
+          });
+          // 获取设备数据后，接着获取最新的日志
+          await fetchLatestLogs(deviceData.deviceId);
+        } else {
+          throw new Error(backendDeviceResp.msg || "加载设备数据失败");
+        }
+      } catch (error) {
+        Taro.showToast({
+          title: error.message || "加载设备失败",
+          icon: "none",
         });
-        await fetchLatestLogs(deviceData.deviceId);
-      } else {
-        throw new Error(backendDevice.msg || "加载设备数据失败");
       }
-    } catch (error) {
-      Taro.showToast({ title: error.message || "加载设备失败", icon: "none" });
-    } finally {
-      setIsLoading(false);
+    },
+    [] // 空依赖数组，因为内部没有依赖外部变量
+  );
+
+  const handleRefresh = useCallback(async () => {
+    if (device?.deviceId) {
+      await fetchDeviceData(device.deviceId);
     }
-  }, []);
+  }, [device, fetchDeviceData]);
 
   useLoad((options) => {
     if (options.deviceId) {
-      fetchDeviceData(options.deviceId);
+      setIsLoading(true);
+      fetchDeviceData(options.deviceId).finally(() => {
+        setIsLoading(false);
+      });
     } else {
       Taro.showToast({ title: "缺少设备ID", icon: "none" });
       setIsLoading(false);
@@ -336,50 +415,11 @@ export default function BurglarAlarmPage() {
     <View className="burglar-alarm-page-container">
       <StatusView
         device={device}
-        onRefresh={() => fetchDeviceData(device.deviceId)}
+        onRefresh={handleRefresh}
+        latestLogs={latestLogs}
+        getIconInfo={getIconInfo}
+        navigateToLogs={navigateToLogs}
       />
-
-      {/* -- START: Refined Latest Logs List -- */}
-      <View className="latest-logs-container">
-        <View className="logs-header">
-          <Text className="logs-title">最新报警日志</Text>
-          {latestLogs.length > 0 && (
-            <Text className="view-all-link" onClick={navigateToLogs}>
-              查看全部 →
-            </Text>
-          )}
-        </View>
-
-        <View className="log-list-wrapper">
-          {latestLogs.length > 0 ? (
-            latestLogs.map((log) => (
-              <View key={log.id} className="log-item" onClick={navigateToLogs}>
-                <View className="log-icon">
-                  <AtIcon
-                    value={getIconInfo(log.eventLevel).icon}
-                    size="24"
-                    color={getIconInfo(log.eventLevel).color}
-                  />
-                </View>
-                <View className="log-content">
-                  <View className="log-header">
-                    <Text className="log-title">{log.eventTypeName}</Text>
-                    <Text className="log-time">
-                      {new Date(log.eventTime).toLocaleString()}
-                    </Text>
-                  </View>
-                  <Text className="log-description">{log.logContent}</Text>
-                </View>
-              </View>
-            ))
-          ) : (
-            <View className="log-item">
-              <Text className="log-description">暂无相关日志</Text>
-            </View>
-          )}
-        </View>
-      </View>
-      {/* -- END: Refined Latest Logs List -- */}
     </View>
   );
 }
