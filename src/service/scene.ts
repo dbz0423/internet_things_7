@@ -18,7 +18,7 @@ export const getScenes = async () => {
   }
 
   const res = await Taro.request({
-    url: `${BASE_URL}/api/user/${userInfo.id}/scenes`,
+    url: `${BASE_URL}/api/user/${userInfo.id}/${userInfo.tenantId}/scenes`,
     method: "GET",
     header: {
       Authorization: `Bearer ${token}`,
@@ -48,6 +48,30 @@ export const getDevicesBySceneId = async (sceneId: number | string) => {
     header: {
       Authorization: `Bearer ${token}`,
     },
+  });
+
+  if (res.statusCode === 200 && res.data && res.data.code === 0) {
+    return res.data.data || [];
+  } else {
+    throw new Error(res.data?.msg || "获取设备列表失败");
+  }
+};
+
+export const getAllDevices = async (params: any) => {
+  console.log("获取所有设备", params);
+
+  const token = getToken();
+  if (!token) {
+    throw new Error("无法获取设备：token不存在");
+  }
+
+  const res = await Taro.request({
+    url: `${BASE_URL}/api/iot/device/list`,
+    method: "GET",
+    header: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: params,
   });
 
   if (res.statusCode === 200 && res.data && res.data.code === 0) {
