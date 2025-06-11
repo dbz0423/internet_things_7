@@ -1,7 +1,11 @@
 import { View, Text } from "@tarojs/components";
 import { useState, useEffect, useRef } from "react";
 import Taro from "@tarojs/taro";
-import { getScenes, getDevicesBySceneId } from "../../service/scene";
+import {
+  getScenes,
+  getDevicesBySceneId,
+  getAllDevices,
+} from "../../service/scene";
 import "./index.scss";
 
 // 后端返回的设备数据类型 (DeviceDTO)
@@ -35,9 +39,16 @@ export default function Index() {
       setIsLoadingScenes(true);
       try {
         const fetchedScenes = await getScenes();
+        console.log("获取的场景列表:", fetchedScenes);
+
         if (fetchedScenes.length > 0) {
-          setScenes(fetchedScenes);
-          setActiveTab(fetchedScenes[0].name);
+          const allScene = {
+            id: 100,
+            name: "全部",
+          };
+          const newFetchedScenes = [allScene, ...fetchedScenes];
+          setScenes(newFetchedScenes);
+          setActiveTab(newFetchedScenes[0].name);
         } else {
           setScenes([]);
           setActiveTab("暂无场景");
@@ -81,6 +92,16 @@ export default function Index() {
         setIsLoadingDevices(true);
         setSceneDevices([]); // 清空旧设备列表
         try {
+          if (sceneId === 100) {
+            let params = {
+              tenantId: Taro.getStorageSync("user").tenantId,
+              userId: Taro.getStorageSync("user").id,
+            };
+            const allDevices = await getAllDevices(params);
+            setSceneDevices(allDevices);
+            setIsLoadingDevices(false);
+            return;
+          }
           const fetchedDevices = await getDevicesBySceneId(sceneId);
           setSceneDevices(fetchedDevices);
         } catch (error) {
