@@ -31,6 +31,7 @@
     @apply relative w-full max-w-sm mb-6 p-4 rounded-lg bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20;
     width: 90%;
     height: 80%;
+    color: white;
     .auth-lucide {
       @apply absolute left-7 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white text-opacity-80;
     }

@@ -40,7 +40,22 @@ export default function Login() {
     }
   };
 
+  const checkLoginStatus = async () => {
+    const user = Taro.getStorageSync("user");
+    const token = Taro.getStorageSync("token");
+
+    if (user && token) {
+      Taro.showToast({
+        title: "自动登录成功",
+        icon: "success",
+      });
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      Taro.switchTab({ url: "/pages/index/index" });
+    }
+  };
+
   useEffect(() => {
+    checkLoginStatus();
     initTenant();
     let interval;
     if (timer) {
@@ -139,8 +154,12 @@ export default function Login() {
     const res = await getUserInfo();
     if (res.code === 0) {
       dispatch(setUserInfo(res.data));
-      console.log(res.data);
-      Taro.setStorageSync("user", res.data);
+      const newRes = {
+        ...res.data,
+        tenantName: selectedCampus,
+      };
+      console.log(newRes);
+      Taro.setStorageSync("user", newRes);
     } else {
       Taro.showToast({
         title: res.msg,
@@ -200,6 +219,13 @@ export default function Login() {
     { name: "浙江工业大学", id: "3" },
   ]);
   const [selectedCampusId, setSelectedCampusId] = useState(0);
+
+  const handleForgotPassword = async () => {
+    Taro.navigateTo({
+      url: "/pages/forget-password/index",
+    });
+  };
+
   return (
     <View className="login-container">
       <View className="logo">
@@ -277,7 +303,9 @@ export default function Login() {
       )}
 
       <View className="link-group">
-        <Text className="forgot-password">忘记密码？</Text>
+        <Text className="forgot-password" onClick={handleForgotPassword}>
+          忘记密码？
+        </Text>
         <Text
           className="sms-login"
           onClick={() =>

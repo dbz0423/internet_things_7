@@ -1,4 +1,113 @@
+/* 颜色变量 */
+$primary-color: #007bff; // 蓝色
+$secondary-color: #ffffff; // 白色
+
+// 定义全局变量
+$primary-bg-color: #0a1931; // 深蓝色背景
+// $card-bg-color: rgba(24, 50, 90, 0.6); // 旧卡片半透明背景
+$card-bg-color-glass: rgba(30, 60, 110, 0.55); // 玻璃拟态卡片背景
+$card-border-color-glass: rgba(255, 255, 255, 0.15);
+$primary-text-color: #ffffff;
+$secondary-text-color: #c0c0c0;
+$accent-color: #4a90e2; // 调整为稍亮的蓝色，用于链接和强调
+$warning-color: #ff4d4f; // 告警红色
+$border-radius: 20px; // 稍微增大圆角
+$font-size-large: 38px; // 原34px → 38px
+$font-size-medium: 20px; // 原18px → 20px
+$font-size-small: 15px; // 原13px → 15px
+$font-size-xsmall: 13px; // 原11px → 13px
+$blur-intensity: 8px; // 玻璃模糊程度
+
 .profile-page {
+  min-height: 100vh;
+  width: 100%;
   padding: 20px;
-  text-align: center;
+  box-sizing: border-box;
+  .flex-row {
+    display: flex;
+    align-items: center;
+    .avatar {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      border: 2px solid $accent-color;
+    }
+
+    .nickname {
+      font-size: $font-size-large + 10;
+      color: $primary-text-color;
+      margin-bottom: 4px;
+    }
+  }
+
+  .input-group {
+    margin: 15px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    display: flex;
+
+    Text:first-child {
+      font-size: $font-size-large;
+      color: $secondary-text-color;
+      margin-right: 20px;
+    }
+
+    .input-field {
+      font-size: $font-size-large + 2; // 输入框的字号
+      color: $primary-text-color;
+    }
+
+    .info-value {
+      font-size: $font-size-large + 2; // 信息值比标签大2px
+      color: $primary-text-color;
+    }
+  }
+
+  .primary-button {
+    background-color: $accent-color;
+    color: white;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+  }
+
+  .secondary-button {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: $primary-text-color;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+  }
+
+  .action-group {
+    margin-top: 35px;
+
+    .action-item {
+      @extend .input-group;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 25px 0;
+
+      &:active {
+        background-color: rgba(255, 255, 255, 0.05);
+      }
+
+      .logout-text {
+        color: $warning-color;
+      }
+    }
+  }
+
+  .version-info {
+    text-align: center;
+    margin-top: 580px;
+    font-size: $font-size-medium;
+    color: $secondary-text-color;
+
+    Text {
+      display: block;
+      margin: 5px 0;
+    }
+  }
 }

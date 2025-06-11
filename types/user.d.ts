@@ -14,7 +14,7 @@ type UserVO = {
   mobile: string;
   nickname: string;
   avatar: string;
-  gender: number;
+  tenantId: number;
   createTime: string;
 };
 
@@ -31,10 +31,10 @@ type AccountLoginVO = {
 };
 
 type UserDTO = {
-  id: number;
   nickname: string;
+  username: string;
+  mobile: string;
   avatar: string;
-  gender: number;
 };
 
 type RegisterDTO = {

@@ -45,6 +45,14 @@ export const updateUser = (data: UserDTO) => {
   });
 };
 
+export const forgetPassword = (data: any) => {
+  return http<string>({
+    method: "PUT",
+    url: `/api/user/forget/password`,
+    data,
+  });
+};
+
 export const register = (data: RegisterDTO) => {
   console.log(
     "Taro.getStorageSync('token')",
@@ -68,5 +76,12 @@ export const getTenants = () => {
   return http<string>({
     method: "GET",
     url: `/api/user/getTenants`,
+  });
+};
+
+export const getPkgVersion = () => {
+  return http({
+    method: "GET",
+    url: `/api/user/getVersion`,
   });
 };
