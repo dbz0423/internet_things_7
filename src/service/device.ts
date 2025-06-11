@@ -35,9 +35,13 @@ const request = (options) => {
  * @param deviceId 设备ID
  */
 export const getDeviceDetails = (deviceId: string) => {
+  const userInfo = Taro.getStorageSync("user");
   return request({
     url: `/api/iot/device/${deviceId}`,
     method: "GET",
+    data: {
+      tenantId: userInfo.tenantId,
+    },
   });
 };
 

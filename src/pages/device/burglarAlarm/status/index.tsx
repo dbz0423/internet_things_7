@@ -1,7 +1,9 @@
-import { View, Text, Image } from "@tarojs/components";
+import { View, Text, Image, Button } from "@tarojs/components";
 import { useState, useEffect, useCallback } from "react";
-import Taro from "@tarojs/taro";
+import Taro, { useLoad } from "@tarojs/taro";
 import { getDeviceDetails, setDeviceMode } from "../../../../service/device";
+import { AtIcon, AtList, AtListItem, AtCard, AtButton } from "taro-ui";
+import { getAlarmLogPage } from "../../../../service/log"; // 引入获取日志的服务
 import "./index.scss";
 
 // 设备数据类型
@@ -22,6 +24,17 @@ interface ActivityLog {
   time: string;
 }
 
+// 定义日志项的数据结构，以便复用
+interface LogItem {
+  id: number;
+  eventTypeName: string;
+  eventLevel: "Critical" | "Warning" | "Info";
+  logContent: string;
+  eventTime: string;
+  deviceId: string;
+}
+
+// 子组件：只负责显示状态和触发操作
 const StatusView = ({
   device,
   onRefresh,
@@ -45,12 +58,6 @@ const StatusView = ({
       setCurrentModeName(null);
     }
   }, [device.alarmStatus]);
-
-  const mockLogs: ActivityLog[] = [
-    { id: 1, icon: "user-check", title: "检测到移动", time: "今天 14:32:05" },
-    { id: 2, icon: "volume-x", title: "警报已静音", time: "今天 14:32:50" },
-    { id: 3, icon: "shield", title: "系统布防", time: "今天 08:00:12" },
-  ];
 
   const getStatusIndicatorClass = () => {
     switch (device.alarmStatus) {
@@ -213,7 +220,7 @@ const StatusView = ({
           className="nav-button"
           onClick={() =>
             Taro.navigateTo({
-              url: `/pages/device/burglarAlarm/logs/index?deviceId=${device.deviceId}`,
+              url: `/pages/alarm-log/index?deviceId=${device.deviceId}`,
             })
           }
         >
@@ -221,7 +228,7 @@ const StatusView = ({
             src="https://unpkg.com/lucide-static@latest/icons/history.svg"
             className="lucide-sm"
           />
-          <Text>活动记录</Text>
+          <Text>报警日志</Text>
         </View>
         <View
           className="nav-button"
@@ -238,119 +245,149 @@ const StatusView = ({
           <Text>布防设置</Text>
         </View>
       </View>
-
-      {/* 最近活动记录 (简化版) */}
-      <View className="glass-card w-full max-w-xs mt-6">
-        <h3 className="text-md font-semibold text-blue-200 mb-2 border-b border-white/10 pb-1.5">
-          最近活动
-        </h3>
-        <View className="space-y-1 text-sm">
-          {mockLogs.map((log) => (
-            <View
-              key={log.id}
-              className="log-item flex justify-between items-center"
-            >
-              <View>
-                <Text className="text-blue-100">{log.title}</Text>
-                <Text className="text-xs text-blue-400 block">{log.time}</Text>
-              </View>
-              <Image
-                src={`https://unpkg.com/lucide-static@latest/icons/${log.icon}.svg`}
-                className="lucide-sm"
-                style={{ width: "20px", height: "20px" }}
-              />
-            </View>
-          ))}
-        </View>
-      </View>
     </View>
   );
 };
-// #endregion
 
 // ======================================================================================
 // 主页面组件
 // ======================================================================================
 export default function BurglarAlarmPage() {
   const [device, setDevice] = useState<BurglarAlarmDevice | null>(null);
+  const [latestLogs, setLatestLogs] = useState<LogItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const getIconInfo = (level?: string | null) => {
+    const iconMap = {
+      Critical: { icon: "alert-circle", color: "#FF4949" },
+      Warning: { icon: "alert-triangle", color: "#FFC82C" },
+      Info: { icon: "info", color: "#13CE66" },
+    };
+    // 默认图标，用于未知或未定义的级别
+    const defaultIcon = { icon: "bell", color: "#999" };
+
+    if (!level) return defaultIcon;
+
+    const key = Object.keys(iconMap).find(
+      (k) => k.toLowerCase() === level.toLowerCase()
+    );
+    // 如果找到匹配的级别，则返回对应的图标信息；否则返回默认图标
+    return key ? iconMap[key] : defaultIcon;
+  };
+
+  const fetchLatestLogs = async (deviceId: string) => {
+    try {
+      const res = (await getAlarmLogPage({ page: 1, size: 3, deviceId })) as {
+        code: number;
+        data?: { list: LogItem[] };
+      };
+      if (res.code === 0 && res.data && res.data.list) {
+        setLatestLogs(res.data.list);
+      }
+    } catch (error) {
+      console.error("获取最新报警日志失败", error);
+    }
+  };
 
   const fetchDeviceData = useCallback(async (deviceId: string) => {
-    Taro.showLoading({ title: "加载中..." });
+    setIsLoading(true);
     try {
-      const res = await getDeviceDetails(deviceId);
-      const backendDevice = res.data;
-      if (!backendDevice || typeof backendDevice.deviceId !== "string") {
-        Taro.showToast({ title: "设备数据格式错误", icon: "none" });
-        return;
-      }
-
-      // 注意：这里的 alarmStatus 计算逻辑可能需要根据您的业务调整
-      // 此处假设 deviceOnline: 0 离线, 1 在线; deviceStatus: 0 撤防, 1 布防, 2 报警
-      // UI alarmStatus: 0 安全(撤防), 1 布防, 2 报警
-      let alarmStatus: 0 | 1 | 2 = 0; // 默认安全
-      if (backendDevice.deviceOnline === 0) {
-        // 如果设备离线，可以定义一个特定的UI状态，或沿用布防/撤防状态
-        // 这里我们简单处理，优先显示布防状态
-        alarmStatus = backendDevice.deviceStatus === 0 ? 0 : 1;
+      const backendDevice = await getDeviceDetails(deviceId);
+      if (backendDevice.code === 0 && backendDevice.data) {
+        const deviceData = backendDevice.data;
+        setDevice({
+          id: deviceData.id,
+          deviceId: deviceData.deviceId,
+          name: deviceData.name,
+          alarmStatus: deviceData.alarmStatus || 0,
+          lastAlertTime: deviceData.lastAlertTime || "未知时间",
+        });
+        await fetchLatestLogs(deviceData.deviceId);
       } else {
-        // 在线时
-        if (backendDevice.deviceStatus === 2) {
-          // 报警中
-          alarmStatus = 2;
-        } else if (backendDevice.deviceStatus === 1) {
-          // 布防
-          alarmStatus = 1;
-        } else {
-          // 撤防
-          alarmStatus = 0;
-        }
+        throw new Error(backendDevice.msg || "加载设备数据失败");
       }
-
-      setDevice({
-        id: backendDevice.id,
-        deviceId: backendDevice.deviceId,
-        name: backendDevice.name,
-        alarmStatus: alarmStatus,
-        lastAlertTime: backendDevice.lastAlertTime || "未知时间",
-      });
     } catch (error) {
       Taro.showToast({ title: error.message || "加载设备失败", icon: "none" });
     } finally {
-      Taro.hideLoading();
+      setIsLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    const router = Taro.getCurrentInstance().router;
-    const deviceId = router?.params.deviceId;
-
-    if (!deviceId) {
-      return;
+  useLoad((options) => {
+    if (options.deviceId) {
+      fetchDeviceData(options.deviceId);
+    } else {
+      Taro.showToast({ title: "缺少设备ID", icon: "none" });
+      setIsLoading(false);
     }
+  });
 
-    fetchDeviceData(deviceId);
-  }, [fetchDeviceData]);
+  const navigateToLogs = () => {
+    if (device?.deviceId) {
+      Taro.navigateTo({
+        url: `/pages/alarm-log/index?deviceId=${device.deviceId}`,
+      });
+    }
+  };
+
+  if (isLoading) {
+    return <View className="burglar-alarm-page-loading">加载中...</View>;
+  }
 
   if (!device) {
     return (
-      <View className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-900 to-indigo-950">
-        <Text className="text-white">正在加载设备信息...</Text>
-      </View>
+      <View className="burglar-alarm-page-loading">设备加载失败或无此设备</View>
     );
   }
 
   return (
-    <View className="flex flex-col text-white p-5 bg-gradient-to-b from-slate-900 via-gray-900 to-indigo-950 min-h-screen">
-      <View>
-        <h1 className="text-xl font-semibold text-white">{device.name}</h1>
-      </View>
+    <View className="burglar-alarm-page-container">
+      <StatusView
+        device={device}
+        onRefresh={() => fetchDeviceData(device.deviceId)}
+      />
 
-      <View className="flex-grow flex flex-col items-center justify-center">
-        <StatusView
-          device={device}
-          onRefresh={() => fetchDeviceData(device.deviceId)}
-        />
+      {/* -- START: Refined Latest Logs List -- */}
+      <View className="latest-logs-container">
+        <View className="logs-header">
+          <Text className="logs-title">最新报警日志</Text>
+          {latestLogs.length > 0 && (
+            <Text className="view-all-link" onClick={navigateToLogs}>
+              查看全部 →
+            </Text>
+          )}
+        </View>
+
+        <View className="log-list-wrapper">
+          {latestLogs.length > 0 ? (
+            latestLogs.map((log) => (
+              <View key={log.id} className="log-item" onClick={navigateToLogs}>
+                <View className="log-icon">
+                  <AtIcon
+                    value={getIconInfo(log.eventLevel).icon}
+                    size="24"
+                    color={getIconInfo(log.eventLevel).color}
+                  />
+                </View>
+                <View className="log-content">
+                  <View className="log-header">
+                    <Text className="log-title">{log.eventTypeName}</Text>
+                    <Text className="log-time">
+                      {new Date(log.eventTime).toLocaleString()}
+                    </Text>
+                  </View>
+                  <Text className="log-description">{log.logContent}</Text>
+                </View>
+              </View>
+            ))
+          ) : (
+            <View className="log-item">
+              <Text className="log-description">暂无相关日志</Text>
+            </View>
+          )}
+        </View>
       </View>
+      {/* -- END: Refined Latest Logs List -- */}
     </View>
   );
 }
