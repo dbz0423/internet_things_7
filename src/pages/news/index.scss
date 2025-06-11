@@ -1,0 +1,183 @@
+/* 颜色变量 */
+$primary-color: #007bff; // 蓝色
+$secondary-color: #ffffff; // 白色
+$text-color: #333333;
+
+// 定义全局变量
+$primary-bg-color: #0a1931; // 深蓝色背景
+// $card-bg-color: rgba(24, 50, 90, 0.6); // 旧卡片半透明背景
+$card-bg-color-glass: rgba(30, 60, 110, 0.55); // 玻璃拟态卡片背景
+$card-border-color-glass: rgba(255, 255, 255, 0.15);
+$primary-text-color: #ffffff;
+$secondary-text-color: #c0c0c0;
+$accent-color: #4a90e2; // 调整为稍亮的蓝色，用于链接和强调
+$warning-color: #ff4d4f; // 告警红色
+$border-radius: 20px; // 稍微增大圆角
+$font-size-large: 34px; // 略微调整
+$font-size-medium: 18px; // 略微调整
+$font-size-small: 13px; // 略微调整
+$font-size-xsmall: 11px; // 略微调整
+$blur-intensity: 8px; // 玻璃模糊程度
+
+.news-page {
+  padding: 0;
+  margin: 0;
+  background-color: $primary-bg-color;
+  color: $primary-text-color;
+  width: 100%;
+  min-height: 100vh;
+  height: 100%;
+
+  /* 搜索栏样式 - 放大比例 */
+  .search {
+    display: flex;
+    align-items: center;
+    gap: 20rpx;
+    padding: 30rpx 40rpx;
+
+    color: $primary-text-color;
+
+    &-item {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      background-color: $primary-bg-color;
+      color: $primary-text-color;
+      padding: 20rpx 30rpx;
+      border-radius: 60rpx;
+      height: 80rpx;
+
+      .icon {
+        margin-right: 15rpx;
+        font-size: 36rpx;
+      }
+
+      .input {
+        flex: 1;
+        font-size: 32rpx;
+        height: 100%;
+        color: #ffffff;
+      }
+
+      .placeholder {
+        color: #999;
+        font-size: 32rpx;
+      }
+    }
+
+    .btn {
+      width: 140rpx;
+      height: 80rpx;
+      line-height: 80rpx;
+      border-radius: 40rpx;
+      font-size: 30rpx;
+      color: white;
+      background: #006eeb;
+      border: none;
+      padding: 0;
+    }
+  }
+
+  /* 分类滚动条 - 放大比例 */
+  .category-scroll {
+    white-space: nowrap;
+    padding: 25rpx 30rpx;
+
+    color: $primary-text-color;
+    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    .category-item {
+      cursor: pointer; /* 添加光标样式 */
+      display: inline-block;
+      padding: 12rpx 32rpx;
+      margin-right: 20rpx;
+      font-size: 28rpx;
+      color: #666;
+      border-radius: 32rpx;
+      background: #afafaf;
+      transition: all 0.3s;
+
+      &:last-child {
+        margin-right: 0;
+      }
+
+      &.active {
+        background: #006eeb;
+        color: #fff;
+        font-weight: bold;
+      }
+    }
+  }
+
+  /* 资讯列表 - 放大比例 */
+  .news-list {
+    padding: 20rpx 30rpx;
+
+    .news-card {
+      display: flex;
+      margin-bottom: 30rpx;
+      background: #1e3c9e;
+      border-radius: 16rpx;
+      overflow: hidden;
+      box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+
+      .card-image {
+        cursor: pointer; /* 添加光标样式 */
+        width: 200rpx;
+        height: 220rpx;
+        background: #eee center/cover no-repeat;
+        flex-shrink: 0;
+      }
+
+      .card-content {
+        flex: 1;
+        padding: 20rpx;
+        display: flex;
+        flex-direction: column;
+
+        .card-title {
+          font-size: 32rpx;
+          font-weight: bold;
+          margin-bottom: 20rpx;
+          color: #ffffff;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          cursor: pointer; /* 添加光标样式 */
+          &:hover {
+            color: #07c160; /* 悬浮时字体颜色 */
+            text-decoration: underline; /* 悬浮时添加下划线 */
+          }
+        }
+
+        .card-desc {
+          overflow: hidden; /* 隐藏超出部分 */
+          text-overflow: ellipsis; /* 超出部分显示省略号 */
+          max-width: 26em; /* 设置最大宽度，1em 约等于 1 个字符的宽度 */
+          font-size: 16rpx;
+          color: #f0efef;
+          margin-bottom: 20rpx;
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          cursor: pointer; /* 添加光标样式 */
+        }
+
+        .card-meta {
+          display: flex;
+          justify-content: space-between;
+          font-size: 24rpx;
+          color: #aaaaaa;
+          cursor: pointer; /* 添加光标样式 */
+          margin-top: auto;
+        }
+      }
+    }
+  }
+}

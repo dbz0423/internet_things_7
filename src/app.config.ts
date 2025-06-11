@@ -8,6 +8,8 @@ export default defineAppConfig({
     "pages/device/burglarAlarm/settings/index",
     "pages/device/burglarAlarm/logs/index",
     "pages/profile/index",
+    "pages/news/index",
+    "pages/news/components/newsDetail/index",
   ],
   window: {
     backgroundTextStyle: "light",
@@ -32,6 +34,12 @@ export default defineAppConfig({
         iconPath: "static/tabs/device_default.png",
         selectedIconPath: "static/tabs/device_selected.png",
         text: "设备",
+      },
+      {
+        pagePath: "pages/news/index",
+        iconPath: "static/tabs/news_default.png",
+        selectedIconPath: "static/tabs/news_selected.png",
+        text: "资讯",
       },
       {
         pagePath: "pages/profile/index",
