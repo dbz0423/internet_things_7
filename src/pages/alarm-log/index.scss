@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.alarm-log-page {
+  @apply flex flex-col min-h-screen text-sky-100 p-2;
+  background-image: linear-gradient(to bottom right, #0f172a, #172554, #0f172a);
+}
+
+.log-list {
+  @apply h-full;
+}
+
+.log-item {
+  @apply flex items-start p-4 mb-3 rounded-xl shadow-md;
+  background-color: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(51, 65, 85, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.log-icon {
+  @apply mr-4 flex-shrink-0 pt-1;
+}
+
+.log-content {
+  @apply flex-grow;
+}
+
+.log-header {
+  @apply flex justify-between items-baseline mb-1;
+}
+
+.log-title {
+  @apply font-semibold text-sky-50 text-base;
+}
+
+.log-time {
+  @apply text-xs text-sky-400;
+}
+
+.log-description {
+  @apply text-sm text-sky-300;
+}
+
+.empty-state {
+  @apply flex flex-col items-center justify-center text-center h-full pt-48 text-sky-500;
+}
+
+.empty-text {
+  @apply mt-4;
+}
+
+/* 隐藏滚动条 */
+.log-list ::-webkit-scrollbar {
+  display: none;
+}

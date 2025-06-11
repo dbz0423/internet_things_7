@@ -11,6 +11,7 @@ export default defineAppConfig({
     "pages/profile/index",
     "pages/news/index",
     "pages/news/components/newsDetail/index",
+    "pages/alarm-log/index",
   ],
   window: {
     backgroundTextStyle: "light",
