@@ -115,7 +115,7 @@ export default function Index() {
     const connectSocket = async () => {
       try {
         const task = await Taro.connectSocket({
-          url: "ws://192.168.100.239:8082/ws/device/status",
+          url: "ws://192.168.100.239:8183/ws/device/status",
         });
         socketTaskRef.current = task;
 
