@@ -134,17 +134,9 @@ const StatusView = ({
         icon: "success",
       });
 
-      // 手动更新模式名称以确保UI实时刷新
-      if (modeValue !== "0") {
-        const savedMode = Taro.getStorageSync("selectedMode");
-        if (savedMode && savedMode.name) {
-          setCurrentModeName(savedMode.name);
-        }
-      } else {
-        setCurrentModeName(null);
-      }
-
-      onRefresh(); // 操作成功后刷新数据
+      setTimeout(() => {
+        onRefresh(); // 刷新设备状态
+      }, 1000);
     } catch (error) {
       Taro.showToast({ title: error.message || "操作失败", icon: "none" });
     } finally {
