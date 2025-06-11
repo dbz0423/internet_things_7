@@ -31,12 +31,12 @@ export default defineAppConfig({
         selectedIconPath: "static/tabs/index_selected.png",
         text: "首页",
       },
-      {
-        pagePath: "pages/device/index",
-        iconPath: "static/tabs/device_default.png",
-        selectedIconPath: "static/tabs/device_selected.png",
-        text: "设备",
-      },
+      // {
+      //   pagePath: "pages/device/index",
+      //   iconPath: "static/tabs/device_default.png",
+      //   selectedIconPath: "static/tabs/device_selected.png",
+      //   text: "设备",
+      // },
       {
         pagePath: "pages/news/index",
         iconPath: "static/tabs/news_default.png",
